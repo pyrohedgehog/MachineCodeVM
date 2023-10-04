@@ -35,19 +35,18 @@ func TestVM(t *testing.T) {
 func TestIdealAddFunction(t *testing.T) {
 	testParameters := [][]int64{{1, 2}, {3, 4}, {-1, 5}}
 	vm := NewVM([]int64{1, 2}, 1)
-	vm.code = []operation{
-		opGetInput{},
-		opConst{value: 1},
-		opGetInput{},
-		opAdd{},
-		opConst{value: 0},
-		opWriteOutput{},
+	m := Model{
+		operations: []operation{
+			opGetInput{},
+			opRSInputs{},
+			opGetInput{},
+			opAdd{},
+			opWriteOutput{},
+		},
 	}
 	for _, param := range testParameters {
-		vm.inputs = param
-		vm.pointInCode = 0
-		vm.pointInStack = -1
-		ans := vm.Run()
+		vm.inputs = NewMemoryRealWith(param)
+		ans := vm.RunModel(&m)
 		assert.Equal(t,
 			[]int64{param[0] + param[1]}, ans,
 			"could not calculate answer correctly",

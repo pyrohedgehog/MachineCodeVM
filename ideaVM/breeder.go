@@ -14,18 +14,15 @@ type Breeder struct {
 // spawn new models
 func (b *Breeder) SpawnModels(modelCount int, initialStepCount int) {
 	//make modelCount models, each time, give it the initial step count number of operations
-	possibilities := []OpCode{Add, Mul, GetInput, WriteOutput, Const} //all the possible options it can generate with
 	models := make([]*Model, modelCount)
 	for i := 0; i < modelCount; i++ {
-		operations := []int64{}
+		operations := make([]operation, initialStepCount)
 		for j := 0; j < initialStepCount; j++ {
-			selection := possibilities[rand.Intn(len(possibilities))]
-			operations = append(operations, int64(selection))
-			if selection == Const {
-				operations = append(operations, rand.Int63())
-			}
+			operations[j] = GetNewOperationAtRandom()
 		}
-		models[i] = GetModelFromStorable(operations)
+		models[i] = &Model{
+			operations: operations,
+		}
 	}
 	b.spawn = models
 }
@@ -51,8 +48,6 @@ func (b *Breeder) CreateNextGeneration() {
 }
 
 func (b *Breeder) mutateModel(m *Model) *Model {
-	possibilities := []operation{opAdd{}, opMul{}, opGetInput{}, opWriteOutput{}, opConst{}} //all the possible options it can generate with
-	// m := b.spawn[0]
 	operationSelected := rand.Intn((len(m.operations) + 1))
 	if len(m.operations) <= operationSelected {
 		return m
@@ -65,16 +60,7 @@ func (b *Breeder) mutateModel(m *Model) *Model {
 	case 0:
 		//add
 
-		selection := possibilities[rand.Intn(len(possibilities))]
-		if selection.GetType() == Const {
-			val := rand.Int63()
-			if rand.Intn(2) == 0 {
-				val *= -1
-			}
-			selection = opConst{
-				value: val,
-			}
-		}
+		selection := GetNewOperationAtRandom()
 		mod.operations = append(mod.operations[:operationSelected], selection)
 		mod.operations = append(mod.operations, mod.operations[operationSelected:]...)
 	case 1:
@@ -86,20 +72,10 @@ func (b *Breeder) mutateModel(m *Model) *Model {
 			rand.Float64() > 0.5 {
 			//TODO: change that to a percentage chance of changing the value
 			op := mod.operations[operationSelected].(opConst)
-			op.value += rand.Int63() * (int64(rand.Intn(2) * -1))
+			op.value += rand.Int63n(1<<32-1) * (int64(rand.Intn(2) * -1))
 			mod.operations[operationSelected] = op
 		} else {
-			op := possibilities[rand.Intn(len(possibilities))]
-			if op.GetType() == Const {
-				val := rand.Int63()
-				if rand.Intn(2) == 0 {
-					val *= -1
-				}
-				op = opConst{
-					value: val,
-				}
-			}
-			mod.operations[operationSelected] = op
+			mod.operations[operationSelected] = GetNewOperationAtRandom()
 		}
 
 	}

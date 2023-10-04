@@ -5,9 +5,9 @@ type IdeaVM struct {
 	stack        []int64
 	pointInStack int //golang arrays can only be 2^32 long, so might as well use the extra space to store a -1, for the end
 
-	inputs  []int64 //the input parameters. Not changeable by the operations
-	storage []int64 //a storage middle point. Changeable from within
-	outputs []int64 //the output channels
+	inputs *MemoryReal //the input parameters. Not changeable by the operations
+	// heap    MemoryReal //a storage middle point. Changeable from within
+	outputs *MemoryReal //the output channels
 
 	code        []operation
 	pointInCode uint64
@@ -17,18 +17,20 @@ type IdeaVM struct {
 
 func NewVM(inputs []int64, outputSize uint) *IdeaVM {
 	return &IdeaVM{
-		stack:        make([]int64, 100), //preallocating space
+		stack:        make([]int64, 10), //preallocating space
 		pointInStack: -1,
 
-		inputs:  inputs,
-		storage: make([]int64, 100),        //preallocating space
-		outputs: make([]int64, outputSize), //limit the output size
+		inputs: NewMemoryRealWith(inputs),
+		// heap:    make([]int64, 100),        //preallocating space
+		outputs: NewMemoryReal(int(outputSize)), //limit the output size
 	}
 }
 
 func (vm *IdeaVM) RunModel(m *Model) []int64 {
 	vm.pointInCode = 0
 	vm.pointInStack = -1
+	vm.inputs.accessPoint = 0
+	vm.outputs = NewMemoryReal(len(vm.outputs.GetMemory()))
 	vm.code = m.operations
 	return vm.Run()
 }
@@ -38,7 +40,7 @@ func (vm *IdeaVM) Run() []int64 {
 	for vm.canStep() {
 		vm.unsafeStep()
 	}
-	return vm.outputs
+	return vm.outputs.memory
 }
 func (vm *IdeaVM) Step() {
 	if !vm.canStep() {

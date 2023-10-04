@@ -7,13 +7,26 @@ import (
 	"testing"
 )
 
-func TestBreedingToSolution(t *testing.T) {
-	eval := NewSimpleEvaluator(addTwoGenerateTests(500))
+func TestBreedingForAddTwo(t *testing.T) {
+	breeder := runTestOnSimpleEvaluator(t, addTwoGenerateTests(100), 10000, 8)
+	topScore := breeder.evaluator.EvaluateIndividual(breeder.spawn[0])
+	fmt.Printf("A top performer has been evaluated at %v%% accuracy\n", topScore)
+	fmt.Printf("congratulations!!!")
+}
+func TestBreedingForReturnNumber(t *testing.T) {
+	breeder := runTestOnSimpleEvaluator(t, returnNumberGenerateTests(100), 10000, 3)
+	topScore := breeder.evaluator.EvaluateIndividual(breeder.spawn[0])
+	fmt.Printf("A top performer has been evaluated at %v%% accuracy\n", topScore)
+	fmt.Printf("congratulations!!!")
+}
+
+func runTestOnSimpleEvaluator(t *testing.T, testSet []SimpleTestSet, generationSize int, modelOperationSize int) *Breeder {
+	eval := NewSimpleEvaluator(testSet)
 	breeder := &Breeder{
 		evaluator: eval,
 	}
 	genNumber := 0
-	breeder.SpawnModels(500, 6)
+	breeder.SpawnModels(generationSize, modelOperationSize)
 	topScore := breeder.EvaluateModels()
 	lastScore := topScore
 	fmt.Printf("Evaluated Spawn to have a top performer at %v%% accuracy.\n", topScore)
@@ -29,15 +42,26 @@ func TestBreedingToSolution(t *testing.T) {
 		topScore = breeder.EvaluateModels()
 		genNumber += 1
 	}
-	fmt.Printf("A top performer has been evaluated at %v%% accuracy\n", topScore)
-	fmt.Printf("congratulations!!!")
+	return breeder
 }
+
 func addTwoGenerateTests(testCount int) []SimpleTestSet {
 	set := make([]SimpleTestSet, testCount)
 	for i := 0; i < testCount; i++ {
 		ins := []int64{rand.Int63(), rand.Int63()}
 		set[i].inputs = ins
 		set[i].expectedResults = []int64{ins[0] + ins[1]}
+	}
+
+	return set
+}
+
+func returnNumberGenerateTests(testCount int) []SimpleTestSet {
+	set := make([]SimpleTestSet, testCount)
+	for i := 0; i < testCount; i++ {
+		ins := []int64{rand.Int63()}
+		set[i].inputs = ins
+		set[i].expectedResults = []int64{ins[0]}
 	}
 
 	return set

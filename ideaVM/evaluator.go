@@ -74,10 +74,9 @@ func (e *SimpleEvaluator) EvaluateIndividual(m *Model) float64 {
 	scoreChan := make(chan float64)
 	//TODO: think about how we evaluate a lot more here, even in the simplest version
 	for j, vm := range e.vms {
-		go func() {
+		go func(vm *ThreadedIdeaVM, expected []int64) {
 			var roundScore float64 = 0
 			result := vm.RunModel(m)
-			expected := e.testData[j].expectedResults
 			//for each of the results, find how close they are to the correct answer, and then evaluate it
 			for resultPoint := 0; resultPoint < len(result); resultPoint++ {
 				val := expected[resultPoint] - result[resultPoint]
@@ -89,7 +88,7 @@ func (e *SimpleEvaluator) EvaluateIndividual(m *Model) float64 {
 				}
 			}
 			scoreChan <- roundScore / float64(len(expected))
-		}()
+		}(vm, e.testData[j].expectedResults)
 	}
 	score := float64(0)
 	for i := 0; i < len(e.vms); i++ {

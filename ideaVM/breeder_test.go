@@ -8,13 +8,13 @@ import (
 )
 
 func TestBreedingForAddTwo(t *testing.T) {
-	breeder := runTestOnSimpleEvaluator(t, addTwoGenerateTests(100), 10000, 8)
+	breeder := runTestOnSimpleEvaluator(t, addTwoGenerateTests(100), 100, 8)
 	topScore := breeder.evaluator.EvaluateIndividual(breeder.spawn[0])
 	fmt.Printf("A top performer has been evaluated at %v%% accuracy\n", topScore)
 	fmt.Printf("congratulations!!!")
 }
 func TestBreedingForReturnNumber(t *testing.T) {
-	breeder := runTestOnSimpleEvaluator(t, returnNumberGenerateTests(100), 10000, 3)
+	breeder := runTestOnSimpleEvaluator(t, returnNumberGenerateTests(100), 100, 3)
 	topScore := breeder.evaluator.EvaluateIndividual(breeder.spawn[0])
 	fmt.Printf("A top performer has been evaluated at %v%% accuracy\n", topScore)
 	fmt.Printf("congratulations!!!")
@@ -34,7 +34,7 @@ func runTestOnSimpleEvaluator(t *testing.T, testSet []SimpleTestSet, generationS
 		genLog := math.Log10(float64(genNumber))
 		if genNumber < 10 ||
 			genNumber%int(math.Pow10(int(genLog))) == 0 ||
-			lastScore != topScore {
+			lastScore < topScore {
 			fmt.Printf("gen:%v\t\ttop:%v%%\n", genNumber, topScore)
 		}
 		breeder.CreateNextGeneration()

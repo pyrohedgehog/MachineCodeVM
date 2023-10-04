@@ -7,8 +7,8 @@ type Breeder struct {
 	spawn []*Model
 	//mutation rate is 0-1 for what percentage of the operations in a model should be mutated
 	//TODO: use!
-	mutationRate float64
-	evaluator    EvaluatorImpl
+	// mutationRate float64
+	evaluator EvaluatorImpl
 }
 
 // spawn new models

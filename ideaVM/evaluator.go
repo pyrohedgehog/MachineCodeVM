@@ -70,7 +70,12 @@ func (e *SimpleEvaluator) EvaluateIndividual(m *Model) float64 {
 		//for each of the results, find how close they are to the correct answer, and then evaluate it
 		for resultPoint := 0; resultPoint < len(result); resultPoint++ {
 			val := expected[resultPoint] - result[resultPoint]
-			score += float64(1) - (math.Abs(float64(val)) / maxInt)
+			// score += float64(1) - (math.Abs(float64(val)) / maxInt)
+			if val == 0 {
+				score += 1
+			} else {
+				score += float64(1) / math.Log10(math.Abs(float64(val)))
+			}
 		}
 		score = score / float64(len(expected))
 	}

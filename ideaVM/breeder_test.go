@@ -76,19 +76,21 @@ func TestBreederSpawnGeneration(t *testing.T) {
 	)
 }
 func TestBreedingForAddTwo(t *testing.T) {
-	breeder := runTestOnSimpleEvaluator(t, addTwoGenerateTests(100), 100, 5)
-	topScore := breeder.evaluator.EvaluateIndividual(breeder.spawn[0])
+	breeder, topScore := runTestOnSimpleEvaluator(t, addTwoGenerateTests(100), 1000, 5)
+
 	fmt.Printf("A top performer has been evaluated at %v%% accuracy\n", topScore*100)
-	fmt.Println("congratulations!!!")
+	fmt.Println("congratulations!!! The top spawns operations were:")
+	fmt.Println(breeder.spawn[0].operations)
 }
 func TestBreedingForReturnNumber(t *testing.T) {
-	breeder := runTestOnSimpleEvaluator(t, returnNumberGenerateTests(100), 100, 3)
-	topScore := breeder.evaluator.EvaluateIndividual(breeder.spawn[0])
+	breeder, topScore := runTestOnSimpleEvaluator(t, returnNumberGenerateTests(1000), 100, 3)
+
 	fmt.Printf("A top performer has been evaluated at %v%% accuracy\n", topScore*100)
-	fmt.Printf("congratulations!!!")
+	fmt.Println("congratulations!!! The top spawns operations were:")
+	fmt.Println(breeder.spawn[0].operations)
 }
 
-func runTestOnSimpleEvaluator(t *testing.T, testSet []SimpleTestSet, generationSize int, modelOperationSize int) *Breeder {
+func runTestOnSimpleEvaluator(t *testing.T, testSet []SimpleTestSet, generationSize int, modelOperationSize int) (*Breeder, float64) {
 	eval := NewSimpleEvaluator(testSet)
 	breeder := &Breeder{
 		evaluator: eval,
@@ -119,7 +121,7 @@ func runTestOnSimpleEvaluator(t *testing.T, testSet []SimpleTestSet, generationS
 		topScore = breeder.EvaluateModels()
 		genNumber += 1
 	}
-	return breeder
+	return breeder, topScore
 }
 
 func addTwoGenerateTests(testCount int) []SimpleTestSet {

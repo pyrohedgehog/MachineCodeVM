@@ -1,13 +1,13 @@
 package ideaVM
 
 import (
-	"math"
 	"sort"
 )
 
 type EvaluatorImpl interface {
 	//take an array of models, evaluate them, and return the models in order of decreasing accuracy
 	OrderModels([]*Model) []*Model
+	GetEvaluationProperties(models []*Model) (min float64, max float64, average float64, valuedModels []valuedModel)
 	EvaluateIndividual(*Model) float64
 }
 type SimpleEvaluator struct {
@@ -38,10 +38,6 @@ type SimpleTestSet struct {
 
 func (e *SimpleEvaluator) OrderModels(models []*Model) []*Model {
 	//see how close it is to giving the target answer. should be run more than once per evaluation with multiple inputs
-	type valuedModel struct {
-		score float64
-		model *Model
-	}
 	valuedModelsChan := make(chan valuedModel)
 	//TODO: i started having a migraine while writing this, i need to clean it.
 	for _, v := range models {
@@ -69,6 +65,35 @@ func (e *SimpleEvaluator) OrderModels(models []*Model) []*Model {
 	}
 	return orderedAns
 }
+func (e *SimpleEvaluator) GetEvaluationProperties(models []*Model) (min float64, max float64, average float64, valuedModels []valuedModel) {
+	valuedModelsChan := make(chan valuedModel)
+	for _, v := range models {
+		go func(v *Model) {
+			mod := valuedModel{
+				score: e.EvaluateIndividual(v),
+				model: v,
+			}
+			valuedModelsChan <- mod
+		}(v)
+	}
+	//get that out from the channel so we can sort it
+	valuedModels = make([]valuedModel, len(models))
+	min = 100
+	max = 0
+	sum := float64(0)
+	for i := 0; i < len(models); i++ {
+		val := <-valuedModelsChan
+		valuedModels[i] = val
+		sum += val.score
+		if val.score < min {
+			min = val.score
+		} else if val.score > max {
+			max = val.score
+		}
+	}
+	average = sum / float64(len(models))
+	return
+}
 
 func (e *SimpleEvaluator) EvaluateIndividual(m *Model) float64 {
 	scoreChan := make(chan float64)
@@ -84,7 +109,7 @@ func (e *SimpleEvaluator) EvaluateIndividual(m *Model) float64 {
 				if val == 0 {
 					roundScore += 1
 				} else {
-					roundScore += float64(1) / math.Log10(math.Abs(float64(val)))
+					roundScore += float64(1) / (float64(val) * float64(val))
 				}
 			}
 			scoreChan <- roundScore / float64(len(expected))

@@ -1,10 +1,14 @@
 package ideaVM
 
-import "math/rand"
+import (
+	"fmt"
+	"math/rand"
+)
 
 type Breeder struct {
 	//a base breeder, this is the element that would most likely be updated
-	spawn []*Model
+	spawn              []*Model
+	initialModelLength int
 	//mutation rate is 0-1 for what percentage of the operations in a model should be mutated
 	//TODO: use!
 	// mutationRate float64
@@ -25,11 +29,50 @@ func (b *Breeder) SpawnModels(modelCount int, initialStepCount int) {
 		}
 	}
 	b.spawn = models
+	b.initialModelLength = initialStepCount
 }
 
 func (b *Breeder) EvaluateModels() (topEvaluation float64) {
 	b.spawn = b.evaluator.OrderModels(b.spawn)
 	return b.evaluator.EvaluateIndividual(b.spawn[0])
+}
+func (b *Breeder) EvaluateAndBreed(skipIfAchieved float64) (topGrade float64, bottomGrade float64, average float64) {
+	min, max, avg, valued := b.evaluator.GetEvaluationProperties(b.spawn)
+	topGrade = max
+	bottomGrade = min
+	average = avg
+	if max >= skipIfAchieved {
+		//so you can run this in a loop until it reaches this value
+		return
+	}
+	children := []*Model{}
+	if max-min <= float64(0.0001) {
+		//there's a lot of homogony in here, so lets just cutoff a large part, and throw in some new genes.
+		valued = valued[len(valued)/4:]
+		for i := 0; i < len(b.spawn)/5; i++ {
+			//20% of the children will be entirely new.
+			freshSpawn := &Model{
+				operations: make([]operation, b.initialModelLength),
+			}
+			for j := 0; j < b.initialModelLength; j++ {
+				freshSpawn.operations[j] = GetNewOperationAtRandom()
+			}
+			children = append(children, freshSpawn)
+		}
+		avg -= 0.0001
+	}
+	for _, val := range valued {
+		if val.score >= avg && len(children) <= len(b.spawn) {
+			children = append(children, val.model)
+		}
+	}
+	for len(children) < len(b.spawn) {
+		parent := children[rand.Intn(len(children))]
+		children = append(children, b.mutateModel(parent))
+	}
+
+	b.spawn = children
+	return
 }
 
 func (b *Breeder) CreateNextGeneration() {
@@ -52,33 +95,34 @@ func (b *Breeder) mutateModel(m *Model) *Model {
 	if len(m.operations) <= operationSelected {
 		return m
 	}
-	mod := &Model{
-		operations: m.operations,
-	} //TODO: check if this is creating a new copy properly
+	operations := m.operations
+	//TODO: check if this is creating a new copy properly
 
 	switch selectionType := rand.Intn(4); selectionType {
 	case 0:
 		//add
 
 		selection := GetNewOperationAtRandom()
-		mod.operations = append(mod.operations[:operationSelected], selection)
-		mod.operations = append(mod.operations, mod.operations[operationSelected:]...)
+		operations = append(operations[:operationSelected], selection)
+		operations = append(operations, operations[operationSelected:]...)
 	case 1:
 		//subtract
-		mod.operations = append(mod.operations[:operationSelected], mod.operations[:operationSelected+1]...)
+		operations = append(operations[:operationSelected], operations[:operationSelected+1]...)
 	case 2:
 		//change
-		if mod.operations[operationSelected].GetType() == Const &&
+		if operations[operationSelected].GetType() == Const &&
 			rand.Float64() > 0.5 {
 			//TODO: change that to a percentage chance of changing the value
-			op := mod.operations[operationSelected].(opConst)
+			op := operations[operationSelected].(opConst)
 			op.value += rand.Int63n(1<<32-1) * (int64(rand.Intn(2) * -1))
-			mod.operations[operationSelected] = op
+			operations[operationSelected] = op
 		} else {
-			mod.operations[operationSelected] = GetNewOperationAtRandom()
+			operations[operationSelected] = GetNewOperationAtRandom()
 		}
 
 	}
 
-	return mod
+	return &Model{
+		operations: operations,
+	}
 }

@@ -2,7 +2,6 @@ package ideaVM
 
 import (
 	"fmt"
-	"math"
 	"math/rand"
 	"testing"
 
@@ -76,14 +75,14 @@ func TestBreederSpawnGeneration(t *testing.T) {
 	)
 }
 func TestBreedingForAddTwo(t *testing.T) {
-	breeder, topScore := runTestOnSimpleEvaluator(t, addTwoGenerateTests(100), 1000, 5)
+	breeder, topScore := runTestOnSimpleEvaluator(t, addTwoGenerateTests(50), 50000, 5)
 
 	fmt.Printf("A top performer has been evaluated at %v%% accuracy\n", topScore*100)
 	fmt.Println("congratulations!!! The top spawns operations were:")
 	fmt.Println(breeder.spawn[0].operations)
 }
 func TestBreedingForReturnNumber(t *testing.T) {
-	breeder, topScore := runTestOnSimpleEvaluator(t, returnNumberGenerateTests(1000), 100, 3)
+	breeder, topScore := runTestOnSimpleEvaluator(t, returnNumberGenerateTests(1000), 75, 2)
 
 	fmt.Printf("A top performer has been evaluated at %v%% accuracy\n", topScore*100)
 	fmt.Println("congratulations!!! The top spawns operations were:")
@@ -97,7 +96,7 @@ func runTestOnSimpleEvaluator(t *testing.T, testSet []SimpleTestSet, generationS
 	}
 	genNumber := 0
 	breeder.SpawnModels(generationSize, modelOperationSize)
-	//DELETE AFTER EVALUATING IF THIS WORKS
+	//this is just here to prove that it *can* be done
 	// breeder.spawn[0] = &Model{operations: []operation{
 	// 	opGetInput{},
 	// 	opRSInputs{},
@@ -105,20 +104,20 @@ func runTestOnSimpleEvaluator(t *testing.T, testSet []SimpleTestSet, generationS
 	// 	opAdd{},
 	// 	opWriteOutput{},
 	// }}
-	//DELETE!!!
-	topScore := breeder.EvaluateModels()
+
+	topScore, bottomScore, average := breeder.EvaluateAndBreed(0.99)
 	lastScore := topScore
-	fmt.Printf("Evaluated Spawn to have a top performer at %v%% accuracy.\n", topScore*100)
+	// fmt.Printf("Evaluated Spawn to have a top performer at %v%% accuracy.\n", topScore*100)
 	for topScore <= 0.99 {
-		genLog := math.Log10(float64(genNumber))
+		// genLog := math.Log10(float64(genNumber))
 		if genNumber < 10 ||
-			genNumber%int(math.Pow10(int(genLog))) == 0 ||
+			// genNumber%int(math.Pow10(int(genLog))) == 0 ||
 			lastScore < topScore {
-			fmt.Printf("gen:%v\t\ttop:%v%%\n", genNumber, topScore*100)
+			fmt.Printf("gen:%v\t\ttop:%v%%\t\tbtm:%v%%\t\tavg:%v%%\n", genNumber, topScore*100, bottomScore*100, average*100)
 		}
-		breeder.CreateNextGeneration()
+		// breeder.CreateNextGeneration()
 		lastScore = topScore
-		topScore = breeder.EvaluateModels()
+		topScore, bottomScore, average = breeder.EvaluateAndBreed(0.99)
 		genNumber += 1
 	}
 	return breeder, topScore

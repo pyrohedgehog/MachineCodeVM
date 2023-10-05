@@ -4,6 +4,10 @@ package ideaVM
 type Model struct {
 	operations []operation
 }
+type valuedModel struct {
+	score float64
+	model *Model
+}
 
 func GetModelFromStorable(vals []int64) *Model {
 	ops := []operation{}
